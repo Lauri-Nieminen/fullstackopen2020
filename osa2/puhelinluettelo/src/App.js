@@ -1,12 +1,12 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import Filter from './components/Filter'
+import PersonForm from './components/PersonForm'
+import Persons from './components/Persons'
+import axios from 'axios'
+
 
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: 'Arto Hellas', number: '040-123456' },
-    { name: 'Ada Lovelace', number: '39-44-5323523' },
-    { name: 'Dan Abramov', number: '12-43-234345' },
-    { name: 'Mary Poppendieck', number: '39-23-6423122' }
-  ])
+  const [persons, setPersons] = useState([])
    
   const [ newName, setNewName ] = useState('')
   const [ newNumber, setNewNumber ] = useState('')
@@ -42,37 +42,32 @@ const App = () => {
     setNameFilter(event.target.value)
   }
 
+  useEffect( () => {
+    console.log('effect')
+    axios
+      .get('http://localhost:3001/persons')
+      .then(response => {
+        console.log('promise fullfilled')
+        setPersons(response.data)
+      })
+  }, []) 
+
   return (
     <div>
       <h2>Phonebook</h2>
-      <div>
-        filter shown with <input value={nameFilter} onChange={handleNameFilterChange} />
-      </div>
+      
+      <Filter filter={nameFilter} handleFilterChange={handleNameFilterChange} />
+
       <h2>add a new</h2>
-      <form onSubmit={addPerson}>
-        <div>
-          name: <input value={newName} onChange={handleNameChange}/>
-        </div>
-        <div>
-          number: <input value={newNumber} onChange={handleNumberChange} />
-        </div>
-        <div>
-          <button type="submit" >add</button>
-        </div>
-      </form>
+      <PersonForm addPerson={addPerson} newName={newName} newNumber={newNumber} 
+                  handleNameChange={handleNameChange} handleNumberChange={handleNumberChange}/>
+    
+      
       <h2>Numbers</h2>
-        {personsToShow.map( (person) => 
-          <Person key={person.name} person={person} />
-        )}
+        <Persons personsToShow={personsToShow}/>
     </div>
   )
 
-}
-
-const Person = ( {person} ) => {
-  return (
-    <p>{person.name} {person.number}</p>
-  )
 }
 
 export default App
