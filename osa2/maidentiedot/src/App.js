@@ -12,16 +12,16 @@ function App() {
     console.log(event.target.value)
     setFilter(event.target.value)
   }
-  
+
   const resultsToShow = results.filter(result => 
     result.name.toLowerCase().match( filter.toLowerCase() )
   )
   useEffect( () => {
-    console.log('effect')
+    console.log('country loading effect')
     axios
       .get('https://restcountries.eu/rest/v2/all')
       .then(response => {
-        console.log('promise fullfilled')
+        console.log('country response', response.data)
         setResults(response.data)
       })
   }, []) 
@@ -32,7 +32,7 @@ function App() {
   return (
     <>
       <Filter filter={filter} handleFilterChange={handleFilterChange} />
-      <Results results={resultsToShow}/>
+      <Results results={resultsToShow} setFilter={setFilter}/>
     </>
   )
 }
