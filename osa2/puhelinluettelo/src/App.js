@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react'
 import Filter from './components/Filter'
 import PersonForm from './components/PersonForm'
 import Persons from './components/Persons'
-import axios from 'axios'
+import personService from './services/persons'
+
 
 
 const App = () => {
@@ -12,17 +13,46 @@ const App = () => {
   const [ newNumber, setNewNumber ] = useState('')
   const [ nameFilter, setNameFilter ] = useState('')
   
-  const personsToShow = persons.filter(person => 
-    person.name.toLowerCase().match( nameFilter.toLowerCase() )
-  )
+  const personsToShow = persons.filter(person => {
+    console.log('personsToShow', person) 
+    return person.name.toLowerCase().match( nameFilter.toLowerCase() )
+  })
 
   const addPerson = (event) => {
     event.preventDefault()
     console.log(event)
     if ( persons.filter(person => person.name === newName).length > 0 ) {
-      alert(`${newName} is already added to phonebook`)
+      console.log('About to update person', newName)
+      if(window.confirm(`${newName} is already in the phonebook, replace the old number with a new one`)) {
+        console.log('Updating person', newName)
+        const personToBeUpdated = persons.find(person => person.name === newName)
+        personToBeUpdated.number = newNumber
+        personService.update(personToBeUpdated.id, personToBeUpdated)
+        setPersons(persons.map(person => person.id !== personToBeUpdated.id ? person : personToBeUpdated))
+      }
     } else {
-      setPersons(persons.concat({name: newName, number: newNumber}))
+      //setPersons(persons.concat({name: newName, number: newNumber}))
+      const personObject = {
+        name: newName,
+        number: newNumber
+      }
+      personService.create(personObject).then(returnedPerson => {
+        console.log('returnedPerson', returnedPerson)
+        setPersons(persons.concat(returnedPerson))
+        setNewName('')
+        setNewNumber('')
+      })
+    }
+  }
+
+  const deletePerson = (id) => {
+    //event.preveaboutntDefault()
+    console.log('About to delete person ', id)
+    const personToBeDeleted = persons.find(person => person.id === id);
+    if(window.confirm(`Delete ${personToBeDeleted.name}?`) ) {
+        console.log(`Deleting person ${personToBeDeleted.id} ${personToBeDeleted.name}`)
+        personService.remove(personToBeDeleted.id)
+        setPersons(persons.filter(person => person.id !== id ))
     }
   }
 
@@ -43,13 +73,11 @@ const App = () => {
   }
 
   useEffect( () => {
-    console.log('effect')
-    axios
-      .get('http://localhost:3001/persons')
-      .then(response => {
-        console.log('promise fullfilled')
-        setPersons(response.data)
-      })
+    console.log('Loading persons')
+    personService.getAll().then(initialPersons => {
+      console.log('Persons loaded')
+      setPersons(initialPersons)
+    })
   }, []) 
 
   return (
@@ -64,7 +92,7 @@ const App = () => {
     
       
       <h2>Numbers</h2>
-        <Persons personsToShow={personsToShow}/>
+        <Persons personsToShow={personsToShow} deletePerson={deletePerson}/>
     </div>
   )
 
