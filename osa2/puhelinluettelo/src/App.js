@@ -3,6 +3,8 @@ import Filter from './components/Filter'
 import PersonForm from './components/PersonForm'
 import Persons from './components/Persons'
 import personService from './services/persons'
+import Notification from './components/Notification'
+import Error from './components/Error'
 
 
 
@@ -12,7 +14,10 @@ const App = () => {
   const [ newName, setNewName ] = useState('')
   const [ newNumber, setNewNumber ] = useState('')
   const [ nameFilter, setNameFilter ] = useState('')
-  
+  const [ notification, setNotification ] = useState(null)
+  const [ error, setError ] = useState(null)
+ 
+ 
   const personsToShow = persons.filter(person => {
     console.log('personsToShow', person) 
     return person.name.toLowerCase().match( nameFilter.toLowerCase() )
@@ -27,8 +32,15 @@ const App = () => {
         console.log('Updating person', newName)
         const personToBeUpdated = persons.find(person => person.name === newName)
         personToBeUpdated.number = newNumber
-        personService.update(personToBeUpdated.id, personToBeUpdated)
-        setPersons(persons.map(person => person.id !== personToBeUpdated.id ? person : personToBeUpdated))
+        personService.update(personToBeUpdated.id, personToBeUpdated).then(response => {
+          setPersons(persons.map(person => person.id !== personToBeUpdated.id ? person : personToBeUpdated))
+          showNotification(`Updated ${personToBeUpdated.name}'s phonenumber`)
+        }).catch(error => {
+          console.log('Update failed')
+          showError(`Information of ${personToBeUpdated.name} has already removed from the server`)
+          setPersons(persons.filter(person => person.id !== personToBeUpdated.id))
+        })
+        
       }
     } else {
       //setPersons(persons.concat({name: newName, number: newNumber}))
@@ -41,8 +53,23 @@ const App = () => {
         setPersons(persons.concat(returnedPerson))
         setNewName('')
         setNewNumber('')
+        showNotification(`Added ${returnedPerson.name}`)
       })
     }
+  }
+
+  const showNotification = (message) => {
+    setNotification(message)
+    setTimeout(() => {
+      setNotification(null)
+    }, 5000)
+  }
+
+  const showError = (error) => {
+    setError(error)
+    setTimeout(() => {
+      setError(null)
+    }, 5000)
   }
 
   const deletePerson = (id) => {
@@ -53,22 +80,23 @@ const App = () => {
         console.log(`Deleting person ${personToBeDeleted.id} ${personToBeDeleted.name}`)
         personService.remove(personToBeDeleted.id)
         setPersons(persons.filter(person => person.id !== id ))
+        showNotification(`Removed ${personToBeDeleted.name}`)
     }
   }
 
   const handleNameChange = (event) => {
-    console.log(event.target.value)
+    //console.log(event.target.value)
     setNewName(event.target.value)
   }
 
   
   const handleNumberChange = (event) => {
-    console.log(event.target.value)
+    //console.log(event.target.value)
     setNewNumber(event.target.value)
   }
 
   const handleNameFilterChange = (event) => {
-    console.log(event)
+    //console.log(event)
     setNameFilter(event.target.value)
   }
 
@@ -83,12 +111,13 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
-      
+      <Notification message={notification} />
+      <Error error={error} />
       <Filter filter={nameFilter} handleFilterChange={handleNameFilterChange} />
 
       <h2>add a new</h2>
       <PersonForm addPerson={addPerson} newName={newName} newNumber={newNumber} 
-                  handleNameChange={handleNameChange} handleNumberChange={handleNumberChange}/>
+                  handleNameChange={handleNameChange} handleNumberChange={handleNumberChange} />
     
       
       <h2>Numbers</h2>
